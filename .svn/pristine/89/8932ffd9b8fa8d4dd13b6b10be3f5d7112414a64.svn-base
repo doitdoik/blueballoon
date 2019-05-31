@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="payDao">
+
+<resultMap type="pay" id="pay">
+	<result column="pay_num" property="payNum"/>
+	<result column="pkg_num" property="pkgNum"/>
+	<result column="mem_id" property="memId"/>
+	<result column="pay_total" property="payTotal"/>
+	<result column="pay_date" property="payDate"/>
+	<result column="pay_state" property="payState" javaType="java.time.LocalDateTime" 
+        jdbcType="TIMESTAMP"/>
+    <result column="pay_people_cnt" property="payPeopleCnt"/>
+	<collection property="package1" resultMap="package"></collection>
+	<collection property="accommodation" resultMap="accommodation"></collection>
+	<collection property="ship" resultMap="ship"></collection>
+	<collection property="transport" resultMap="transport"></collection>
+	<collection property="stay" resultMap="stay"></collection>
+</resultMap>
+
+<resultMap type="package" id="package">
+	<result column="pkg_num" property="pkgNum"/>
+	<result column="stay_num" property="stayNum"/>
+	<result column="trans_num" property="transNum"/>
+	<result column="pkg_name" property="pkgName"/>
+	<collection property="accommodation" resultMap="accommodation"></collection>
+	<collection property="ship" resultMap="ship"></collection>
+	<collection property="transport" resultMap="transport"></collection>
+	<collection property="stay" resultMap="stay"></collection>
+</resultMap>
+
+<resultMap type="accom" id="accommodation">
+	<result column="accom_Num" property="accomNum"/>
+	<result column="accom_Max_Cap" property="accomMaxCap"/>
+	<result column="accom_Star" property="accomStar"/>
+	<result column="accom_Addr" property="accomAddr"/>
+	<result column="mem_Brand" property="memBrand"/>
+	<result column="is_Code" property="isCode"/>
+	<result column="image_Num" property="imageNum"/>
+	<result column="accom_Week_Price" property="accomWeekPrice"/>
+	<result column="accom_Wknd_Price" property="accomWkndPrice"/>
+</resultMap>
+
+<resultMap type="ship" id="ship">
+	<result column="ship_Num" property="shipNum"/>
+	<result column="mem_Brand" property="memBrand"/>
+	<result column="ship_Name" property="shipName"/>
+	<result column="ship_Max_Cap" property="shipMaxCap"/>
+	<result column="is_Num" property="isNum"/>
+	<result column="mem_Id" property="memId"/>
+	<result column="ship_Week_Price" property="shipWeekPrice"/>
+	<result column="ship_Wknd_Price" property="shipWkndPrice"/>
+	<result column="ship_content" property="shipContent"/>
+	<result column="ship_departure" property="shipDeparture"/>
+</resultMap>
+
+<resultMap type="trans" id="transport">
+	<result column="trans_Num" property="transNum"/>
+	<result column="ship_Num" property="shipNum"/>
+	<result column="trans_Date" property="transDate"/>
+	<result column="trans_Can_Cap" property="transCanCap"/>
+</resultMap>
+
+<resultMap type="stay" id="stay">
+	<result column="stay_Num" property="stayNum"/>
+	<result column="accom_Num" property="accomNum"/>
+	<result column="stay_Date" property="stayDate"/>
+	<result column="stay_Can_Cap" property="stayCanCap"/>
+</resultMap>
+
+
+<insert id="write" useGeneratedKeys="true" keyProperty="payNum">
+		<selectKey keyProperty="payNum" resultType="int"
+			order="BEFORE">
+			select pay_seq.nextval from dual
+		</selectKey>
+	insert into payment values(#{payNum}, #{pkgNum}, #{memId},#{payTotal},sysdate,1,#{payPeopleCnt})
+</insert>
+
+<select id="newPayInfo" resultMap="pay" parameterType="String">
+	SELECT
+		p.pkg_name 
+		,sh.ship_name
+		,a.mem_brand 
+		,a.accom_addr
+		,pay.pay_date
+		,pay.pay_total
+		,pay.pkg_Num
+		,sh.ship_departure
+		,pay.pay_people_cnt
+		,t.trans_date
+	FROM 
+		package p
+	 	,stay s
+	 	,transport t
+	 	,ship sh
+	 	,accommodation a
+	 	,payment pay 
+	WHERE
+		 sh.ship_num=t.ship_num 
+		 and t.trans_num=p.trans_num 
+		 and a.accom_num=s.accom_num 
+		 and s.stay_num=p.stay_num
+		 and p.pkg_num=pay.pkg_num
+		 and pay.mem_id=#{memId}
+		 and pay.pay_num=(select max(pay_num) from payment)
+</select>
+
+<delete id="delete">
+	delete from package
+	where pkg_num=#{pkgName}
+</delete>
+
+</mapper>

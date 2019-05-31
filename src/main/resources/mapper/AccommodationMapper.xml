@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="accomDao">
+
+<resultMap type="accom" id="accommodation">
+	<result column="accom_content" property="accomContent"/>
+	<result column="accom_Num" property="accomNum"/>
+	<result column="accom_Max_Cap" property="accomMaxCap"/>
+	<result column="accom_Addr" property="accomAddr"/>
+	<result column="mem_Brand" property="memBrand"/>
+	<result column="is_Num" property="isNum"/>
+	<result column="image_Num" property="imageNum"/>
+	<result column="accom_Week_Price" property="accomWeekPrice"/>
+	<result column="accom_Wknd_Price" property="accomWkndPrice"/>
+	<collection property="stay" resultMap="stay"/>
+	<collection property="member" resultMap="member"/>
+	<collection property="image" resultMap="image"/>
+	<collection property="island" resultMap="island"/>
+	<collection property="star" resultMap="star"/>
+	<collection property="package1" resultMap="package"/>
+	<collection property="payment" resultMap="pay"/>
+</resultMap>
+
+<resultMap type="member" id="member">
+	<result column="mem_id" property="memId"/>
+	<result column="mem_pwd" property="memPwd"/>
+	<result column="mem_gender" property="memGender"/>
+	<result column="mem_birth_date" property="memBirthDate"/>
+	<result column="mem_tel" property="memTel"/>
+	<result column="mem_brand" property="memBrand"/>
+	<result column="mem_licence" property="memLicence"/>
+	<result column="mem_name" property="memName"/>
+	
+</resultMap>
+
+<resultMap type="image" id="image">
+	<result column="image_num" property="imageNum"></result>
+	<result column="image_name" property="imageName"></result>
+</resultMap>
+
+<resultMap type="island" id="island">
+	<result column="is_num" property="isNum"></result>
+	<result column="is_name" property="isName"></result>
+</resultMap>
+
+<resultMap type="stay" id="stay">
+	<result column="stay_num" property="stayNum"/>
+	<result column="accom_num" property="accomNum"/>
+	<result column="sys_date" property="sysDate" />
+	<result column="stay_can_cap" property="stayCanCap" />
+</resultMap>
+
+<resultMap type="star" id="star">
+	<result column="accom_num" property="accomNum"/>
+	<result column="star_score" property="starScore"/>
+</resultMap>
+
+	<resultMap type="package" id="package">
+		<result column="pkg_num" property="pkgNum"/>
+		<result column="stay_num" property="stayNum"/>
+		<result column="trans_num" property="transNum"/>
+		<result column="pkg_name" property="pkgName"/>
+	</resultMap>
+	
+	<resultMap type="pay" id="pay">
+		<result column="pay_num" property="payNum"/>
+		<result column="pkg_num" property="pkgNum"/>
+		<result column="mem_id" property="memId"/>
+		<result column="pay_total" property="payTotal"/>
+		<result column="pay_date" property="payDate"/>
+		<result column="pay_state" property="payState" javaType="java.time.LocalDateTime" 
+	        jdbcType="TIMESTAMP"/>
+	    <result column="pay_people_cnt" property="payPeopleCnt"/>
+	</resultMap>
+
+
+	<insert id="write" useGeneratedKeys="true" keyProperty="accomNum">
+		<selectKey keyProperty="accomNum" resultType="int"
+			order="BEFORE">
+			select accom_seq.nextval from dual
+		</selectKey>
+		insert into accommodation(ACCOM_NUM,ACCOM_MAX_CAP,ACCOM_ADDR,MEM_BRAND,IS_NUM,
+		IMAGE_NUM,ACCOM_WEEK_PRICE,ACCOM_WKND_PRICE,ACCOM_CONTENT,MEM_ID)
+		values(#{accomNum},#{accomMaxCap},#{accomAddr},#{memBrand},#{isNum},
+		image_seq.currval,#{accomWeekPrice},#{accomWkndPrice},#{accomContent},#{memId})
+	</insert>
+	
+	<select id="list" resultMap="accommodation" parameterType="Integer">
+	<![CDATA[
+           select * from 
+	       	(select rownum rnum, b.* from 
+	       		(select /*+ index_desc(a accommodation_pk_accom_num)*/	
+	       		a.accom_num  ,
+                a.accom_addr , 
+                a.mem_brand,
+                i.image_name ,
+	       		isl.is_num
+	       		from accommodation a , image i, island isl
+	       	    where  a.is_num = isl.is_num and isl.is_num=#{isNum} and a.image_num=i.image_num
+	       		) b   		
+	       	where rownum<=#{endRow}) 
+	    where rnum>=#{startRow}
+		]]>
+	</select>
+	
+	<select id="detail" resultMap="accommodation" parameterType="Integer">
+		select distinct
+			a.accom_num
+            ,a.accom_max_cap
+            ,a.accom_addr
+            ,a.mem_brand
+            ,a.is_num
+            ,a.image_num
+            ,a.accom_week_price
+            ,a.accom_wknd_price
+            ,(SELECT TO_CHAR(SUBSTR(accom_content, 1, 4000))
+            FROM accommodation where accom_num=#{accomNum})as accom_content
+            ,m.mem_tel
+            ,i.image_name
+            ,isl.is_name
+            ,st.stay_can_cap
+            ,(select round(avg(s.star_score),1)
+            from star s , accommodation a
+            where a.accom_num=#{accomNum}
+            and a.accom_num=s.accom_num
+            group by a.accom_num)as star_score
+		from 
+			accommodation a,
+			member m,
+			image i,
+			island isl,
+            star s,
+            stay st
+		where 
+			a.ACCOM_NUM=#{accomNum} and
+			a.mem_brand=m.mem_brand and
+			a.image_num=i.image_num and
+			a.is_num=isl.is_num and
+            a.accom_num=s.accom_num(+) and
+            a.accom_num=st.accom_num
+	</select>
+	
+	<select  id="findByAccom" resultType="member">
+		select mem_brand memBrand,mem_tel memTel,mem_name memName from member where mem_id=#{memId} and rownum=1
+	</select>
+	
+	<select id="count" resultType="int">
+		select count(accom_num) from accommodation
+	</select>
+	
+	<delete id="delete">
+		delete from accommodation where accom_num=#{accomNum} and rownum=1
+	</delete>
+	
+	<!-- Staymapper.updateStayCanCap으로 사용
+	<update id="updateCnt">
+		update accommodation set accom_max_cap=#{accomMaxCap} where accom_num=#{accomNum}
+	</update>
+	 -->
+	<select id="noPagingList" resultType="accom">
+		select ACCOM_NUM accomNum, ACCOM_MAX_CAP accomMaxCap,ACCOM_ADDR accomAddr,MEM_BRAND memBrand,
+		IS_NUM isNum ,IMAGE_NUM imageNum,ACCOM_WEEK_PRICE accomWeekPrice,ACCOM_WKND_PRICE accomWkndPrice, ACCOM_CONTENT accomContent
+		from accommodation
+	</select>
+	
+	<select id="consumerList" resultMap="accommodation" parameterType="Integer">
+	select 
+			pay.mem_id,
+			m.mem_name,
+			pay.pay_people_cnt,
+			m.mem_tel 
+    from 
+			payment pay,
+			package p,
+			stay s,
+			accommodation a,
+			member m
+    where
+			m.mem_id=pay.mem_id and
+			pay.pkg_num=p.pkg_num and
+			p.stay_num=s.stay_num and
+			a.accom_Num=s.accom_num and
+			a.accom_num=#{accomNum}
+	</select>
+
+	<update id="update">
+		update 
+			accommodation 
+		set
+			accom_addr=#{accomAddr}, accom_week_price=#{accomWeekPrice}, accom_wknd_price=#{accomWkndPrice}, accom_max_cap=#{accomMaxCap},accom_content=#{accomContent}
+		where
+			accom_num=#{accomNum}
+	</update>
+	
+	<select id="findById" resultType="Integer">
+		select accom_num, mem_brand from accommodation where mem_id=#{memId}
+	</select>
+	
+</mapper>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="transDao">
+	
+	<insert id="write" useGeneratedKeys="true" keyProperty="transNum">  
+		<selectKey keyProperty="transNum" resultType="int"
+			order="BEFORE">
+			select trans_seq.nextval from dual
+		</selectKey>
+		insert into transport (TRANS_NUM,SHIP_NUM,TRANS_DATE,TRANS_CAN_CAP)
+		values(#{transNum},ship_seq.currval,sysdate,0)
+	</insert>
+	
+	<insert id="writeForPackage" useGeneratedKeys="true" keyProperty="transNum">  
+		<selectKey keyProperty="transNum" resultType="int"
+			order="BEFORE">
+			select trans_seq.nextval from dual
+		</selectKey>
+		insert into transport (TRANS_NUM,SHIP_NUM,TRANS_DATE,TRANS_CAN_CAP)
+		values(#{transNum},#{shipNum},sysdate,0)
+	</insert>
+	
+	<insert id="writeForMyPackage" useGeneratedKeys="true" keyProperty="transNum">  
+		<selectKey keyProperty="transNum" resultType="int"
+			order="BEFORE">
+			select trans_seq.nextval from dual
+		</selectKey>
+		insert into transport values(#{transNum},#{shipNum},#{transDate},#{transCanCap},#{memId})
+	</insert>
+	
+	<select id="detail" resultType="trans">
+		select trans_num transNum,ship_num shipNum,trans_date transDate,trans_can_cap transCanCap
+		from transport 
+		where trans_num=#{transNum}
+	</select>
+	
+	<select id="list" resultType="trans">
+		select trans_num transNum,ship_num shipNum,trans_date transDate,trans_can_cap transCanCap
+		from transport
+	</select>
+	
+	<update id="updateTransCanCap">
+		update transport set trans_can_cap=trans_can_cap+#{transCanCap} where trans_num=#{transNum}
+	</update>
+	
+	<update id="updateTransCanCapAndDate">
+		update transport set trans_can_cap=trans_can_cap+#{transCanCap},trans_date=#{transDate} where ship_num=#{shipNum}
+	</update>
+	
+	
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="starDao">
+
+<resultMap type="star" id="star">
+	<result column="accom_num" property="accomNum"/>
+	<result column="star_score" property="starScore"/>
+	<collection property="accommodation" resultMap="accommodation"/>
+</resultMap>
+
+<resultMap type="accom" id="accommodation">
+	<result column="accom_Num" property="accomNum"/>
+	<result column="accom_Max_Cap" property="accomMaxCap"/>
+	<result column="accom_Star" property="accomStar"/>
+	<result column="accom_Addr" property="accomAddr"/>
+	<result column="mem_Brand" property="memBrand"/>
+	<result column="is_Code" property="isCode"/>
+	<result column="image_Num" property="imageNum"/>
+	<result column="accom_Week_Price" property="accomWeekPrice"/>
+	<result column="accom_Wknd_Price" property="accomWkndPrice"/>
+</resultMap>
+
+	<insert id="insert">
+		insert into star values(#{accomNum},#{starScore})
+	</insert>
+	
+	<insert id="insertForRead">
+		insert into star(accom_num) values(#{accomNum})
+	</insert>
+	
+	<delete id="delete">
+		delete from star where star_score is null
+	</delete>
+	
+	<select id="detail" resultMap="star" parameterType="Integer">
+		SELECT DISTINCT 
+			a.accom_num
+			, a.mem_brand
+		FROM
+			star s, accommodation a 
+		WHERE 
+			a.accom_num=#{accomNum}
+			and a.accom_num=s.accom_num
+	</select>
+</mapper>

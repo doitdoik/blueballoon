@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ReviewDao">
+
+	
+	<!-- 리뷰게시판 -->
+	<resultMap type="review" id="review">
+		<result column="rev_num" property="revNum"/>
+		<result column="rev_title" property="revTitle"/>
+		<result column="rev_content" property="revContent"/>
+		<result column="rev_write_date" property="revWriteDate"/>
+		<result column="reply_num" property="replyNum"/>
+		<result column="mem_id" property="memId"/>
+		<result column="image_num" property="imageNum"/>
+		<result column="rev_good_cnt" property="revGoodCnt"/>
+		<result column="rev_read_cnt" property="revReadCnt"/>
+		<result column="reply_cnt" property="replyCnt"/>
+		<collection property="reply" javaType="java.util.ArrayList" resultMap="reply"/>
+	</resultMap>
+  <!-- 댓글 -->
+	<resultMap type="reply" id="reply">
+		<result column="reply_number" property="replyNum"/>
+		<result column="reply_date" property="replyDate"/>
+		<result column="reply_content" property="replyContent"/>
+		<result column="reply_mem_id" property="memId"/>
+		<result column="com_brand" property="comBrand"/>
+		<result column="qna_num" property="qnaNum"/>
+		<result column="rev_num" property="revNum"/>	
+	</resultMap>	
+	
+	<select id="count" resultType="Integer">
+		select count(*) from review
+	</select>
+
+
+	<!-- 작성자 -->
+	<insert id="insert">
+		insert into review(rev_num, rev_title,
+		rev_content,
+		rev_write_date,mem_id,image_num,rev_good_cnt,rev_read_cnt)
+		values(review_seq.nextval, #{revTitle}, #{revContent}, sysdate,
+		#{memId},#{imageNum},0,0)
+	</insert>
+
+	<!-- 글 저장 -->
+	<insert id="write" useGeneratedKeys="true" keyProperty="revNum">
+		<selectKey keyProperty="revNum" resultType="int"
+			order="BEFORE">
+			select review_seq.nextval from dual
+		</selectKey>
+		insert into review(rev_num, rev_title,
+		rev_content,
+		rev_write_date,reply_num,mem_id,image_num,rev_good_cnt,rev_read_cnt)
+		values(#{revNum}, #{revTitle}, #{revContent}, sysdate, #{replyNum},
+		#{memId},#{imageNum},0,0)
+	</insert>
+
+
+
+	<!-- list -->
+	<select id="list" resultType="review">
+   <![CDATA[
+   select * from
+   (select rownum as rnum, r.* from
+      (select /*+ index_desc(review review_pk_rev_num)*/ rev_num revNum, rev_title revTitle, rev_content revContent, 
+      rev_write_date revWriteDate, reply_num replyNum, mem_id memId,image_num imageNum,rev_good_cnt revGoodCnt,
+      rev_read_cnt revReadCnt,
+      (select count(*) from reply where rev_num=rev.rev_num)as replyCnt 
+      from review rev order by rev_num desc)r
+   where rownum<=#{endRow})
+   where rnum>=#{startRow}
+   ]]>
+	</select>
+
+	<update id="update">
+		update review set rev_title=#{revTitle},
+		rev_content=#{revContent}
+		where rev_num=#{revNum}
+	</update>
+
+	<!-- 글내용 11111
+	<select id="detail" resultType="review">
+		select rev_num revNum, rev_title
+		revTitle, rev_content revContent,
+		rev_write_date revWriteDate,
+		reply_num replyNum, mem_id
+		memId,image_num imageNum,rev_good_cnt
+		revGoodCnt,
+		rev_read_cnt revReadCnt
+		from review where rev_num=#{revNum}
+	</select>-->
+	
+	<!-- 글내용 수정222 -->
+<select id="detail" resultMap="review" parameterType="int" >
+		select 
+			r.rev_num
+			,r.rev_title
+			,r.rev_content
+			,r.rev_write_date
+			,r.mem_id
+			,r.image_num
+			,r.rev_good_cnt
+			,r.rev_read_cnt
+			,rp.reply_mem_id
+			,rp.reply_date
+			,rp.reply_content
+			,rp.reply_number
+			,rp.qna_num
+			,rp.rev_num
+		from 
+			review r
+			,reply rp 
+		where 
+			r.rev_num=rp.rev_num(+)
+			and r.rev_num=#{revNum}
+	</select>
+	
+	
+	<delete id="delete">
+		delete from review where rev_num=#{revNum} and
+		rownum=1
+	</delete>
+
+	<!-- 조회수 증가 -->
+	<update id="updateRevReadCnt">
+		update review set rev_read_cnt = rev_read_cnt+1 where
+		rev_num = #{revNum} and
+		rownum=1
+	</update>
+	
+	<!-- 조회수 가져오기 -->
+	<select id="readRevReadCnt" resultType="Integer">
+		select rev_read_cnt from review where rev_num=#{revNum}
+	</select>
+	
+	<!-- 글작성자 확인 -->
+	<select id="findMemIdById" resultType="string">
+		select mem_id from review
+		where rev_num=#{revNum} and rownum=1
+	</select>
+
+
+	<!-- 추천하기 -->
+	<update id="updateRevGoodCnt">
+		update review set rev_good_cnt=rev_good_cnt+1 where rev_num=#{revNum} and rownum=1
+	</update>
+	
+	
+<select id="findRevGoodCntById" resultType="int">
+	select rev_good_cnt from review where rev_num=#{revNum} and rownum=1
+</select>
+
+<select id="alreadyExist" resultType="string">
+	select mem_id from review where mem_id=#{memId} and rev_num=#{revNum} and rownum=1
+</select>
+
+
+
+	
+
+	
+</mapper>
+

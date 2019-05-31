@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TempMemberDao">
+
+	
+	<select id="findTempEmailById" resultType="string">
+		select temp_email from temp_member where temp_id=#{tempId} and rownum=1
+	</select>
+	
+	<insert id="insert">
+		insert into temp_member(temp_id,temp_email,temp_pwd,temp_gender,temp_birth_date,temp_tel,temp_name,temp_brand,temp_licence)
+		values(#{tempId},#{tempEmail},#{tempPwd},#{tempGender},#{tempBirthDate},#{tempTel},#{tempName},#{tempBrand},#{tempLicence})
+	</insert>
+	<!--  id로 회원 정보 읽기 -->
+	<select id="findById" resultType="temp">
+		select temp_id tempId, temp_email tempEmail, temp_pwd tempPwd, temp_gender tempGender
+		,temp_birth_date tempBirthDate, temp_tel tempTel, temp_name tempName, temp_brand tempBrand
+		,temp_licence tempLicence
+		from temp_member 
+		where temp_id=#{tempId}
+		and rownum=1
+	</select>
+	<!--  임시 회원 정보 리스트 출력 -->
+	<select id="findByList" resultType="temp">
+		select temp_id tempId, temp_email tempEmail, temp_pwd tempPwd, temp_gender tempGender
+		,temp_birth_date tempBirthDate, temp_tel tempTel, temp_name tempName, temp_brand tempBrand
+		,temp_licence tempLicence
+		from temp_member 
+		
+	</select>
+	<!--  임시 회원 삭제 (cron) -->
+	<delete id="delete">
+		delete from temp_member
+	</delete>
+	<!--  임시 회원 승인후 삭제  -->
+	<delete id="deleteById">
+		delete from temp_member where temp_id=#{tempId} and rownum=1 
+	</delete>
+	
+	<select id="findIdById" resultType="string">
+		select temp_id from temp_member where temp_id=#{tempId} and rownum=1
+	</select>
+	
+	<select id="findEmailByEmail" resultType="string">
+		select temp_email from temp_member where temp_email=#{tempEmail} and rownum=1
+	</select>
+	
+	<select id="findLicenceByLicence" resultType="string">
+		select temp_licence tempLicence from temp_member where temp_licence=#{tempLicence} and rownum=1
+	</select>
+</mapper>

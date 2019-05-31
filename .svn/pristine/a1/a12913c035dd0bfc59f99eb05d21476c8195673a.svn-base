@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="islandDao">
+
+
+
+<resultMap type="island" id="island">
+	<result column="is_num" property="isNum"/>
+	<result column="is_name" property="isName"/>
+	<result column="is_star" property="isStar"/>
+	<result column="is_info" property="isInfo"/>
+	<result column="image_num" property="imageNum"/>
+	<collection property="image" resultMap="image"></collection>
+	<collection property="accommodation" resultMap="accommodation"></collection>
+	<collection property="attraction" resultMap="attraction"></collection>
+	<collection property="transport" resultMap="transport"></collection>
+</resultMap>
+
+
+<resultMap type="attr" id="attraction">
+	<result column="attr_Num" property="attrNum"/>
+	<result column="attr_read_cnt" property="attrReadCnt"/>
+	<result column="attr_title" property="attrTitle"/>
+	<result column="attr_content" property="attrContent" jdbcType="CLOB" javaType="java.lang.String"/>
+	<result column="image_num" property="imageNum"/>
+</resultMap>
+
+<resultMap type="accom" id="accommodation">
+	<result column="accom_Num" property="accomNum"/>
+	<result column="accom_Max_Cap" property="accomMaxCap"/>
+	<result column="accom_Star" property="accomStar"/>
+	<result column="accom_Addr" property="accomAddr"/>
+	<result column="mem_Brand" property="memBrand"/>
+	<result column="is_Code" property="isCode"/>
+	<result column="image_Num" property="imageNum"/>
+	<result column="accom_Week_Price" property="accomWeekPrice"/>
+	<result column="accom_Wknd_Price" property="accomWkndPrice"/>
+</resultMap>
+<resultMap type="trans" id="transport">
+	<result column="trans_Num" property="transNum"/>
+	<result column="ship_Num" property="shipNum"/>
+	<result column="trans_Date" property="transDate"/>
+	<result column="trans_Can_Cap" property="transCanCap"/>
+</resultMap>
+
+<resultMap type="image" id="image">
+	<result column="image_num" property="imageNum"></result>
+	<result column="image_name" property="imageName"></result>
+</resultMap>
+
+<parameterMap type="island" id="insertSequence">
+	<parameter property="isNum" javaType="int"/>
+	<parameter property="accomNum" javaType="int"/>
+	<parameter property="transNum" javaType="int"/>
+	<parameter property="isName" javaType="String"/>
+	<parameter property="attrNum" javaType="int"/>
+</parameterMap>
+	<select id="count" resultType="int">
+		select /*+ index_ffs(island island_pk_is_num)*/ count(*) 
+		from island
+	
+	</select>
+	<!-- 섬 리스트 -->
+
+	<select id="findAll" resultMap="island" parameterType="Integer">
+	<![CDATA[
+		select * from
+	       	(select rownum rnum, b.* from 
+	       		(select /*+ index_desc(island island_pk_isNum) */
+	       		i.is_num , i.is_name ,
+	       		im.image_name
+	       		from island i, image im  
+	       		where i.image_num=im.image_num(+)
+	       		 ) b
+	       	where rownum<=#{endRow}) 
+	    where rnum>=#{startRow}
+	]]>
+	</select>
+
+
+	<!-- 숙박작성에서 보일 섬리스트 -->
+	<select id="noPagingList" resultType="island">
+		select is_num isNum, is_name isName, is_star isStar, accom_num accomNum, attr_num attrNum, trans_num transNum, is_info isInfo, image_num imageNum
+		from island
+	</select>
+	
+
+	<!-- 글읽기 -->
+	<select id="detail" resultMap="island" parameterType="Integer">
+		
+		<!-- 
+		<![CDATA[
+			select i.is_num  isNum, i.is_name isName, i.is_star isStar, i.accom_num accomNum
+			, i.attr_num attrNum, i.trans_num transNum, i.is_info isInfo , i.image_num imageNum
+		 
+			from island i 
+			where i.is_num=#{isNum}
+
+		]]>
+		 -->
+	 select i.is_num  
+      	 , i.is_name 
+         , i.is_info
+         , im.image_name
+       
+    from island i   
+         , image im
+    where
+         i.is_num=#{isNum}
+        and i.image_num = im.image_num
+	</select>
+
+	<!-- 글 쓰기 -->
+	<insert id="insert" useGeneratedKeys="true" keyProperty="isNum">
+		<selectKey keyProperty="isNum" resultType="int"
+			order="BEFORE">
+			select island_seq.nextval from dual
+		</selectKey>
+		insert into island(is_num , is_name , is_star , accom_num , attr_num , trans_num , is_info , image_num)
+		values(#{isNum},#{isName},#{isStar}
+		,#{accomNum},#{attrNum},
+		#{transNum}, #{isInfo} , image_seq.currval)
+	</insert>
+
+	<!-- 갱신 -->
+	<update id="update">
+		update island set is_name=#{isName},
+		is_info=#{isInfo}
+		where is_num=#{isNum}
+	</update>
+
+
+	<!-- 별점하기 -->
+
+	<update id="updateStar">
+		update island set is_star=#{isStar}
+		where is_num=#{isNum}
+		and rownum=1
+	</update>
+
+
+	<!-- 삭제 -->
+	<delete id="delete">
+		delete from island where is_num=#{isNum} and rownum=1
+	</delete>
+
+</mapper>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="QnaBoardDao">
+
+	<resultMap type="qna" id="qna">
+		<result column="qna_num" property="qnaNum"/>
+		<result column="qna_title" property="qnaTitle"/>
+		<result column="qna_content" property="qnaContent"/>
+		<result column="qna_write_date" property="qnaWriteDate"/>
+		<result column="reply_num" property="replyNum"/>
+		<result column="mem_id" property="memId"/>
+		<result column="reply_cnt" property="replyCnt"/>
+		<collection property="reply" javaType="java.util.ArrayList" resultMap="reply"/>
+	</resultMap>
+	
+	<resultMap type="reply" id="reply">
+		<result column="reply_number" property="replyNum"/>
+		<result column="reply_date" property="replyDate"/>
+		<result column="reply_content" property="replyContent"/>
+		<result column="reply_mem_id" property="memId"/>
+		<result column="com_brand" property="comBrand"/>
+		<result column="qna_num" property="qnaNum"/>
+		<result column="rev_num" property="revNum"/>	
+	</resultMap>
+	
+   <select id="count" resultType="Integer">
+      select count(*) from qna_board
+   </select>
+   
+   <insert id="insert">
+      insert into qna_board(qna_num, qna_title, qna_content, qna_write_date, mem_id)
+      values(qna_seq.nextval, #{qnaTitle}, #{qnaContent}, sysdate, #{memId})
+   </insert>
+   
+   <insert id="write" useGeneratedKeys="true" keyProperty="qnaNum">
+      <selectKey keyProperty="qnaNum" resultType="int" order="BEFORE">
+         select qna_seq.nextval from dual 
+      </selectKey>
+         insert into qna_board(qna_num, qna_title,
+         qna_content, qna_write_date, reply_num, mem_id)
+         values(#{qnaNum}, #{qnaTitle}, #{qnaContent}, sysdate, #{replyNum}, #{memId})
+   </insert>
+   
+   <select id="list" resultType="qna">
+   <![CDATA[
+   select * from
+   (select rownum as rnum, i.* from
+      (select /*+ index_desc(qna_board qna_board_pk_qna_num)*/ qna_num qnaNum, qna_title qnaTitle, qna_content qnaContent, 
+      qna_write_date qnaWriteDate, reply_num replyNum, mem_id memId,
+      (select count(*) from reply where qna_num=q.qna_num)as replyCnt
+      from qna_board q order by qna_num desc)i
+   where rownum<=#{endRow})
+   where rnum>=#{startRow}
+   ]]>
+   </select>
+   
+   <update id="update">
+      update qna_board set qna_title=#{qnaTitle}, qna_content=#{qnaContent}
+      where qna_num=#{qnaNum}
+   </update>
+   
+   <select id="detail" resultMap="qna" parameterType="Integer">
+      select 
+	      q.qna_num
+	      ,q.qna_title
+	      ,q.qna_content
+	      ,q.qna_write_date
+	      ,q.mem_id
+	      ,r.reply_mem_id
+		  ,r.reply_date
+		  ,r.reply_content
+		  ,r.reply_number
+		  ,r.qna_num
+		  ,r.rev_num
+      from 
+      	  qna_board q
+         ,reply r
+      where 
+        q.qna_num=r.qna_num(+)
+      	and q.qna_num=#{qnaNum}
+   </select>
+   
+   <delete id="delete">
+      delete from qna_board where qna_num=#{qnaNum} and rownum=1
+   </delete>
+   
+   <select id="writer" resultType="qna">
+      <![CDATA[
+         select * from
+            (select rownum rnum, b.* from
+               (select /*+ index_desc(qnaBoard board_pk_qnaNum) */ qna_num qnaNum, qna_title qnaTitle, 
+               qna_content qnaContent, qna_write_date qnaWriteDate, reply_num replyNum, mem_id memId
+               from qna_board where mem_id=#{memId}) b
+            where rownum<=#{endRow})
+         where rnum>=#{startRow}   
+      ]]>
+   </select>
+</mapper>

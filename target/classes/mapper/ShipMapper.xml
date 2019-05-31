@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="shipDao">
+	<resultMap type="ship" id="ship">
+		<result column="ship_num" property="shipNum"/>
+		<result column="mem_brand" property="memBrand"/>
+		<result column="ship_name" property="shipName"/>
+		<result column="is_num" property="isNum"/>
+		<result column="mem_id" property="memId"/>
+		<result column="ship_week_price" property="shipWeekPrice"/>
+		<result column="ship_wknd_price" property="shipWkndPrice"/>
+		<result column="ship_content" property="shipContent"/>
+		<result column="ship_departure" property="shipDeparture"/>
+		<result column="image_num" property="imageNum"/>
+		<result column="ship_addr" property="shipAddr"/>
+		<result column="ship_max_cap" property="shipMaxCap"/>
+		<collection property="member" resultMap="member"/>
+		<collection property="image" resultMap="image"/>
+		<collection property="island" resultMap="island"/>
+		<collection property="transport" resultMap="transport"/>
+		<collection property="package1" resultMap="package"/>
+		<collection property="payment" resultMap="pay"/>
+	</resultMap>
+	
+	<resultMap type="member" id="member">
+		<result column="mem_id" property="memId"/>
+		<result column="mem_pwd" property="memPwd"/>
+		<result column="mem_gender" property="memGender"/>
+		<result column="mem_birth_date" property="memBirthDate"/>
+		<result column="mem_tel" property="memTel"/>
+		<result column="mem_brand" property="memBrand"/>
+		<result column="mem_licence" property="memLicence"/>
+	</resultMap>
+
+	<resultMap type="image" id="image">
+		<result column="image_num" property="imageNum"/>
+		<result column="image_name" property="imageName"/>
+	</resultMap>
+
+	<resultMap type="island" id="island">
+		<result column="is_num" property="isNum"/>
+		<result column="is_name" property="isName"/>
+	</resultMap>	
+	
+	<resultMap type="trans" id="transport">
+		<result column="trans_num" property="transNum"/>
+		<result column="ship_num" property="shipNum"/>
+		<result column="trans_date" property="transDate"/>
+		<result column="trans_can_cap" property="transCanCap"/>
+	</resultMap>
+	
+	<resultMap type="package" id="package">
+		<result column="pkg_num" property="pkgNum"/>
+		<result column="stay_num" property="stayNum"/>
+		<result column="trans_num" property="transNum"/>
+		<result column="pkg_name" property="pkgName"/>
+	</resultMap>
+	
+	<resultMap type="pay" id="pay">
+		<result column="pay_num" property="payNum"/>
+		<result column="pkg_num" property="pkgNum"/>
+		<result column="mem_id" property="memId"/>
+		<result column="pay_total" property="payTotal"/>
+		<result column="pay_date" property="payDate"/>
+		<result column="pay_state" property="payState" javaType="java.time.LocalDateTime" 
+	        jdbcType="TIMESTAMP"/>
+	    <result column="pay_people_cnt" property="payPeopleCnt"/>
+	</resultMap>
+
+
+	<insert id="write" useGeneratedKeys="true" keyProperty="shipNum">
+		<selectKey keyProperty="shipNum" resultType="int"
+			order="BEFORE">
+			select ship_seq.nextval from dual
+		</selectKey>
+		insert into ship (ship_num,mem_brand,ship_name,ship_max_cap,is_num,ship_week_price,ship_wknd_price,ship_content,ship_departure,image_num,ship_addr,mem_id)
+		values(#{shipNum},#{memBrand},#{shipName},#{shipMaxCap},#{isNum},#{shipWeekPrice},#{shipWkndPrice},#{shipContent},#{shipDeparture},image_seq.currval,#{shipAddr},#{memId})
+	</insert>
+	
+	<select id="list" resultMap="ship" parameterType="Integer">
+		<![CDATA[
+           select * from 
+	       	(select rownum rnum, b.* from 
+	       		(select /*+ index_desc(s ship_pk_ship_num)*/		
+	       		s.ship_num ,
+                s.ship_addr,
+                s.mem_brand,
+                i.image_name,
+	       		isl.is_num
+	       		from ship s  , image i, island isl
+	       	    where  s.is_num = isl.is_num and isl.is_num=#{isNum} and s.image_num=i.image_num	
+	       		) b   		
+	       	where rownum<=#{endRow}) 
+	    where rnum>=#{startRow}
+		]]>
+	</select>
+	
+	<select id="detail" resultMap="ship" parameterType="Integer">
+		select 
+			s.ship_num
+			,s.mem_brand
+			,s.ship_name
+			,s.ship_max_cap
+			,s.is_num
+			,s.ship_week_price
+			,s.ship_wknd_price
+			,s.ship_addr
+			,s.image_num
+			,s.ship_content
+			,s.ship_addr
+			,s.ship_departure
+			,t.trans_Can_Cap
+			,t.trans_num
+			,m.mem_tel
+			,i.image_name
+			,isl.is_name
+		from 
+			ship s,
+			member m,
+			image i,
+			island isl,
+			transport t
+		where 
+			s.ship_num=#{shipNum} and
+			s.mem_id=m.mem_id and
+			s.image_num=i.image_num and
+			s.is_num=isl.is_num and
+			s.ship_num=t.ship_num(+)
+	</select>
+	
+	<select id="noPagingList" resultType="ship">
+		select SHIP_NUM shipNum,MEM_BRAND memBrand,SHIP_NAME shipName,
+		SHIP_MAX_CAP shipMaxCap,IS_NUM isNum,MEM_ID memId
+		from ship
+	</select>
+	
+	<select id="count" resultType="int">
+		select count(ship_num) from ship
+	</select>
+	
+	<select  id="findByShip" resultType="member">
+		select mem_brand memBrand,mem_tel memTel from member where mem_id=#{memId} and rownum=1
+	</select>
+	
+	<select id="consumerList" resultMap="ship">
+		select 
+			pay.mem_id
+			,m.mem_name
+			,pay.pay_people_cnt
+			,m.mem_tel 
+		from 
+			payment pay
+			, package p
+			, transport t
+			, ship s
+			, member m
+		where
+			 m.mem_id=pay.mem_id 
+			 and pay.pkg_num=p.pkg_num 
+			 and p.trans_num=t.trans_num 
+			 and t.ship_Num=s.ship_num
+			 and s.ship_num=#{shipNum}
+	</select>
+	
+	<delete id="delete">
+		delete from ship where ship_num=#{shipNum} and rownum=1
+	</delete>
+	
+	<update id="update">
+		update 
+			ship 
+		set
+			ship_addr=#{shipAddr}, ship_week_price=#{shipWeekPrice}, ship_wknd_price=#{shipWkndPrice}, ship_max_cap=#{shipMaxCap},ship_content=#{shipContent}, ship_departure=#{shipDeparture}
+		where
+			ship_num=#{shipNum}
+	</update>
+	
+	<select id="findById" resultType="Integer">
+		select ship_num, ship_name from ship where mem_id=#{memId}
+	</select>
+	
+</mapper>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org/DTD config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<!-- null 입력 전면 허용 -->
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL" />
+	</settings>
+	
+	<typeAliases>
+		<typeAlias type="com.icia.blueballoon.entity.Accommodation" alias="accom"/>
+		<typeAlias type="com.icia.blueballoon.entity.Attraction" alias="attr"/>
+		<typeAlias type="com.icia.blueballoon.entity.Authority" alias="authority"/>
+		<typeAlias type="com.icia.blueballoon.entity.Favorite" alias="favorite"/>
+		<typeAlias type="com.icia.blueballoon.entity.Image" alias="image"/>
+		<typeAlias type="com.icia.blueballoon.entity.Information" alias="info"/>
+		<typeAlias type="com.icia.blueballoon.entity.Member" alias="member"/>
+		<typeAlias type="com.icia.blueballoon.entity.Package1" alias="package"/>
+		<typeAlias type="com.icia.blueballoon.entity.Payment1" alias="pay"/>
+		<typeAlias type="com.icia.blueballoon.entity.QnaBoard" alias="qna"/>
+		<typeAlias type="com.icia.blueballoon.entity.Reply" alias="reply"/>
+		<typeAlias type="com.icia.blueballoon.entity.Review" alias="review"/>
+		<typeAlias type="com.icia.blueballoon.entity.Ship" alias="ship"/>
+		<typeAlias type="com.icia.blueballoon.entity.Stay" alias="stay"/>
+		<typeAlias type="com.icia.blueballoon.entity.TempMember" alias="temp"/>
+		<typeAlias type="com.icia.blueballoon.entity.Transport" alias="trans"/>
+		<typeAlias type="com.icia.blueballoon.entity.Island" alias="island"/>
+		<typeAlias type="com.icia.blueballoon.entity.Account" alias="account"/>
+		<typeAlias type="com.icia.blueballoon.entity.Star" alias="star"/>
+	</typeAliases>
+</configuration>

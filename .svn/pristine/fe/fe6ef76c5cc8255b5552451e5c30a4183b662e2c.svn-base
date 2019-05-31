@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<task:annotation-driven/>
+	<annotation-driven />
+
+	<default-servlet-handler/>
+	
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp"/>
+	</beans:bean>
+	
+	<security:global-method-security secured-annotations="enabled" pre-post-annotations="enabled"/>
+	<context:component-scan base-package="com.icia.blueballoon" />
+	
+	<!-- 로그인한 상태에서 (login, findId, findPwd에 접근한 경우 예외를 발생시키는 인터셉터 설정 -->
+	<beans:bean id="authorizationInterceptor" class="com.icia.blueballoon.util.interceptor.AuthorizationInterceptor"/>
+	<interceptors>
+		<interceptor>
+			<mapping path="/member/login"/>
+			<mapping path="/member/findId"/>
+			<mapping path="/member/findPwd"/>
+			<beans:ref bean ="authorizationInterceptor"/>
+		</interceptor>
+	</interceptors>
+	
+	<!-- 트랜잭션 관리자 설정 -->
+	<!-- 20 라인에서 생성한 dataSource(연결)을 이용해 트랜잭션 관리자를 생성 -->
+	<beans:bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<beans:property name="dataSource" ref="dataSource" />
+	</beans:bean>
+	
+	<!-- @Transactional 어노테이션 활성화 -->
+	<tx:annotation-driven transaction-manager="txManager" proxy-target-class="true" />
+
+</beans:beans>

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pkgDao">
+
+<resultMap type="package" id="package">
+	<result column="pkg_num" property="pkgNum"/>
+	<result column="stay_num" property="stayNum"/>
+	<result column="trans_num" property="transNum"/>
+	<result column="image_num" property="imageNum"/>
+	<result column="pkg_name" property="pkgName"/>
+	<result column="pkg_is_admin" property="pkgIsAdmin"/>
+	<collection property="accommodation" resultMap="accommodation"/>
+	<collection property="ship" resultMap="ship"/>
+	<collection property="transport" resultMap="transport"/>
+	<collection property="stay" resultMap="stay"/>
+	<collection property="star" resultMap="star"/>
+	<collection property="member" resultMap="member"/>
+	<collection property="image" resultMap="image"/>	
+</resultMap>
+
+<resultMap type="accom" id="accommodation">
+	<result column="accom_Num" property="accomNum"/>
+	<result column="accom_Max_Cap" property="accomMaxCap"/>
+	<result column="accom_Star" property="accomStar"/>
+	<result column="accom_Addr" property="accomAddr"/>
+	<result column="accom_content" property="accomContent"/>
+	<result column="mem_Brand" property="memBrand"/>
+	<result column="is_Code" property="isCode"/>
+	<result column="image_Num" property="imageNum"/>
+	<result column="accom_Week_Price" property="accomWeekPrice"/>
+	<result column="accom_Wknd_Price" property="accomWkndPrice"/>
+</resultMap>
+
+<resultMap type="ship" id="ship">
+	<result column="ship_Num" property="shipNum"/>
+	<result column="mem_Brand" property="memBrand"/>
+	<result column="ship_Name" property="shipName"/>
+	<result column="ship_Max_Cap" property="shipMaxCap"/>
+	<result column="is_Num" property="isNum"/>
+	<result column="mem_Id" property="memId"/>
+	<result column="ship_Week_Price" property="shipWeekPrice"/>
+	<result column="ship_Wknd_Price" property="shipWkndPrice"/>
+	<result column="ship_content" property="shipContent"/>
+	<result column="ship_departure" property="shipDeparture"/>
+</resultMap>
+
+<resultMap type="trans" id="transport">
+	<result column="trans_Num" property="transNum"/>
+	<result column="ship_Num" property="shipNum"/>
+	<result column="trans_Date" property="transDate"/>
+	<result column="trans_Can_Cap" property="transCanCap"/>
+	<result column="mem_id" property="memId"/>
+</resultMap>
+
+<resultMap type="stay" id="stay">
+	<result column="stay_Num" property="stayNum"/>
+	<result column="accom_Num" property="accomNum"/>
+	<result column="stay_Date" property="stayDate"/>
+	<result column="stay_Can_Cap" property="stayCanCap"/>
+	<result column="mem_id" property="memId"/>
+</resultMap>
+
+<resultMap type="star" id="star">
+	<result column="accom_num" property="accomNum"/>
+	<result column="star_score" property="starScore"/>
+</resultMap>
+
+<resultMap type="member" id="member">
+		<result column="mem_id" property="memId"/>
+		<result column="mem_pwd" property="memPwd"/>
+		<result column="mem_gender" property="memGender"/>
+		<result column="mem_birth_date" property="memBirthDate"/>
+		<result column="mem_tel" property="memTel"/>
+		<result column="mem_brand" property="memBrand"/>
+		<result column="mem_licence" property="memLicence"/>
+</resultMap>
+
+<resultMap type="image" id="image">
+	<result column="image_num" property="imageNum"></result>
+	<result column="image_name" property="imageName"></result>
+</resultMap>
+	
+<select id="list" resultMap="package" parameterType="Integer">
+<![CDATA[
+select * from
+	(
+	select rownum as rnum, b.* from
+		(select /*+ index_desc(package package_pk_pkg_num)*/ 
+			p.pkg_Num, p.stay_Num, p.trans_Num, p.pkg_Name, a.accom_num, sh.ship_num, i.image_name
+			from package p, accommodation a, stay s, transport t, ship sh, image i
+			where p.stay_num=s.stay_num and s.accom_num=a.accom_num
+			and t.ship_num=sh.ship_num and p.trans_num=t.trans_num
+			and p.image_num=i.image_num and p.pkg_is_admin=1 order by pkg_num desc
+			
+		)b
+	where rownum<=#{endRow}	
+	)	
+where rnum>=#{startRow}
+]]>	
+</select>
+
+<insert id="write" useGeneratedKeys="true" keyProperty="pkgNum">
+	<selectKey keyProperty="pkgNum" resultType="Integer"
+			order="BEFORE">
+			SELECT 
+				pkg_seq.nextval as pkgNum				
+			FROM 
+				dual
+	</selectKey>
+	insert into package(PKG_NUM,STAY_NUM,TRANS_NUM,IMAGE_NUM,PKG_NAME,PKG_IS_ADMIN) 
+	values(#{pkgNum},stay_seq.currval,trans_seq.currval,image_seq.currval,#{pkgName},1)
+</insert>
+
+<insert id="writeForMyPackage" useGeneratedKeys="true" keyProperty="pkgNum">
+	<selectKey keyProperty="pkgNum" resultType="Integer"
+			order="BEFORE">
+			SELECT 
+				pkg_seq.nextval as pkgNum				
+			FROM 
+				dual
+	</selectKey>
+	insert into package(PKG_NUM,STAY_NUM,TRANS_NUM,PKG_NAME,PKG_IS_ADMIN) 
+	values(#{pkgNum},#{stayNum},trans_seq.currval,'파랑풍선',0)
+</insert>
+
+<select id="detail" parameterType="Integer" resultMap="package">
+	SELECT DISTINCT
+		p.pkg_num
+		,p.pkg_name 
+		,sh.ship_week_price
+		,sh.ship_wknd_price
+		,sh.ship_name
+		,sh.ship_max_cap
+		,sh.ship_departure
+		,(SELECT TO_CHAR(SUBSTR(ship_content, 1, 4000))
+            FROM ship where ship_num=#{shipNum})as ship_content
+        ,sh.ship_num    
+		,a.mem_brand 
+		,a.accom_week_price
+		,a.accom_wknd_price
+		,a.accom_max_cap
+		,a.accom_addr
+		,a.accom_num
+		,i.image_name
+		,(SELECT TO_CHAR(SUBSTR(accom_content, 1, 4000))
+            FROM accommodation where accom_num=#{accomNum})as accom_content
+		,(select round(avg(s.star_score),1)
+            from star s , accommodation a
+            where a.accom_num=#{accomNum}
+            and a.accom_num=s.accom_num
+            group by a.accom_num)as star_score
+	FROM 
+		package p
+	 	,stay s
+	 	,transport t
+	 	,ship sh
+	 	,accommodation a 
+	 	,star st
+	 	,image i
+	WHERE
+		 sh.ship_num=t.ship_num 
+		 and t.trans_num=p.trans_num 
+		 and a.accom_num=s.accom_num 
+		 and p.image_num=i.image_num
+		 and s.stay_num(+)=p.stay_num
+		 and a.accom_num=st.accom_num(+)
+		 and p.pkg_num=#{pkgNum}
+</select>
+
+<select id="count" resultType="int">
+	select count(pkg_num) from package
+</select>
+
+<update id="update">
+	update package set pkg_name=#{pkgName} 
+	where pkg_num=#{pkgNum}
+</update>
+
+<delete id="delete">
+	delete from package
+	where pkg_num=#{pkgName}
+</delete>
+
+<select id="myPackageStayList" parameterType="String" resultMap="package">
+	select 
+		s.stay_date
+		,s.stay_can_cap
+		,a.mem_brand
+		,a.accom_week_price
+		,a.accom_wknd_price
+		,a.accom_addr
+	from 
+		stay s
+		,member m
+		,accommodation a
+	where
+		 m.mem_id=a.mem_id
+		 and a.accom_num=s.accom_num
+		 and s.stay_num=(select max(stay_num) from stay)
+		 and s.mem_id=#{memId}
+
+</select>
+
+<select id="myPackageTransList" parameterType="String" resultMap="package">
+	select 
+		t.trans_date
+		,t.trans_can_cap
+		,s.ship_name
+		,s.ship_week_price
+		,s.ship_wknd_price
+		,s.ship_departure
+	from
+		transport t
+		,member m
+		,ship s
+	where
+		m.mem_id=s.mem_id
+		and s.ship_num=t.ship_num
+		and t.trans_num=(select max(trans_num) from transport)
+		and t.mem_id=#{memId}	 
+</select>
+
+<select id="myPackageInfo" resultMap="package" parameterType="map">
+	select 
+		p.pkg_num
+	   ,p.pkg_name
+	   ,t.mem_id
+	from 
+		package p, transport t
+	where 
+		p.trans_num=t.trans_num
+		and t.mem_id=#{memId}
+		and p.pkg_num=#{pkgNum}
+</select>
+
+</mapper>

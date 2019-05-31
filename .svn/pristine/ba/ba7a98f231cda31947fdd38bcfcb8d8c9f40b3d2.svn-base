@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="InfoDao">
+
+	<select id="count" resultType="Integer">
+		select count(*) from information
+	</select>
+	
+   <insert id="write" useGeneratedKeys="true" keyProperty="infoNum">
+	<selectKey keyProperty="infoNum" resultType="int" order="BEFORE">
+		select info_seq.nextval from dual
+	</selectKey>
+      insert into information(info_num, info_title, 
+      info_content, info_write_date, image_num)
+      values(#{infoNum}, #{infoTitle}, #{infoContent}, sysdate, #{imageNum})
+   </insert>
+   
+   <select id="list" resultType="info">
+   <![CDATA[
+   select * from
+	   (select rownum as rnum, i.* from
+	      (select /*+ index_desc(information info_pk_info_num)*/ info_num infoNum, info_title infoTitle,
+	      info_content infoContent, info_write_date infoWriteDate, image_num imageNum 
+	      from Information)i
+	   where rownum<=#{endRow})
+	where rnum>=#{startRow}  
+   ]]>    
+   </select>
+   
+   <update id="update">
+      update information set info_title=#{infoTitle}, info_content=#{infoContent}
+      where info_num=#{infoNum}
+   </update>
+   
+   <select id="findReadCnt" resultType="int">
+      select read_cnt from information where info_num=#{infoNum} and rownum=1
+   </select>
+   
+   <update id="updateReadCnt">
+      update information set read_cnt=read_cnt+1 where info_num=#{infoNum} and rownum=1
+   </update>
+   
+   <select id="detail" resultType="info">
+      select info_num infoNum, info_title infoTitle,
+      info_content infoContent, info_write_date infoWriteDate, image_num imageNum
+      from Information
+      where info_num=#{infoNum}
+   </select>
+   
+   <delete id="delete">
+      delete from information where info_num=#{infoNum} and rownum=1
+   </delete>
+</mapper>
